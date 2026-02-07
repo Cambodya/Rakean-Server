@@ -1,35 +1,47 @@
-name: Build Armbian
+name: Build Armbian Rakean
 on:
   workflow_dispatch:
     inputs:
       board:
-        description: '(rakean-amlogic-s905x)'
+        description: 'Target Board'
         required: true
         default: 'amlogic-s905x'
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    container:
-      image: debian:12
-      options: --privileged
-    
+    runs-on: ubuntu-22.04 # GCC & GLIBC paling deket ama Debian 12
     steps:
-      - name: Update & Install Base Tools
+      - name: Checkout Armbian
+        uses: actions/checkout@v4
+        with:
+          repository: 'armbian/build'
+          ref: 'main'
+
+      - name: Free Disk Space
         run: |
-          apt-get update
-          # Tambahin kmod, wget, dan bc (penting buat proses kernel & firmware)
-          apt-get install -y git sudo debootstrap curl ca-certificates python3 python3-distutils lsb-release build-essential kmod wget bc
+          sudo docker image prune -a -f
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt-get autoremove -y && sudo apt-get clean
+
+      - name: Install Base Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git sudo debootstrap curl ca-certificates python3 python3-distutils lsb-release build-essential kmod wget bc qemu-user-static
 
       - name: Build Armbian
         run: |
-          ./compile.sh BOARD=${{ github.event.inputs.board }} \
-                       BRANCH=current \
-                       RELEASE=bookworm \
-                       BUILD_MINIMAL=no \
-                       INSTALL_FIRMWARE=yes \
-                       KERNEL_CONFIGURE=no
-          
+          # Pake sudo biar bisa mounting loop device buat .img
+          sudo ./compile.sh \
+            BOARD=${{ github.event.inputs.board }} \
+            BRANCH=current \
+            RELEASE=bookworm \
+            BUILD_MINIMAL=no \
+            INSTALL_FIRMWARE=yes \
+            KERNEL_CONFIGURE=no \
+            COMPRESS_OUTPUTIMAGE=img \
+            CLEAN_LEVEL=make,debs,images \
+            REPOSITORY_INTERACTIVE_MODE=frozencheck
+
       - name: Upload Image
         uses: actions/upload-artifact@v4
         with:
