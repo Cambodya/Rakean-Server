@@ -32,15 +32,18 @@ jobs:
         run: |
           # Pake sudo biar bisa mounting loop device buat .img
           sudo ./compile.sh \
-            BOARD=${{ github.event.inputs.board }} \
-            BRANCH=current \
-            RELEASE=bookworm \
-            BUILD_MINIMAL=no \
-            INSTALL_FIRMWARE=yes \
-            KERNEL_CONFIGURE=no \
-            COMPRESS_OUTPUTIMAGE=img \
-            CLEAN_LEVEL=make,debs,images \
-            REPOSITORY_INTERACTIVE_MODE=frozencheck
+            BOARD=amlogic-s905x \
+              BRANCH=current \
+              RELEASE=bookworm \
+              BUILD_MINIMAL=yes \
+              BUILD_DESKTOP=no \
+              KERNEL_ONLY=no \
+              KERNEL_CONFIGURE=no \
+              COMPRESS_OUTPUTIMAGE=img \
+              CLEAN_LEVEL=make,debs,images \
+              REPOSITORY_INTERACTIVE_MODE=frozencheck \
+              ARTIFACTS_DIR=output \
+              GIT_SUBMODULES=no
 
       - name: Upload Image
         uses: actions/upload-artifact@v4
